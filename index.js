@@ -8,15 +8,14 @@ const welcomeRouter = require('./welcome/welcomeRouter')
 const usersRouter = require('./users/usersRouter')
 
 
+
 const server = express()
 const port = process.env.PORT || 4000
 
 
+
 server.use(helmet())
 server.use(express.json())
-server.use(welcomeRouter)
-server.use(usersRouter)
-
 server.use(session({
 	resave:false, // avoid creating sessions that have not changed
 	saveUninitialized: false, //GDPR laws against setting cookies
@@ -27,13 +26,17 @@ server.use(session({
 	})
 }))
 
+server.use(welcomeRouter)
+server.use(usersRouter)
+
+
+
 server.use((err, req, res, next) => {
 	console.log(err)
 	res.status(500).json({
 		message: "Something went wrong",
 	})
 })
-
 
 
 server.listen(port, () => {

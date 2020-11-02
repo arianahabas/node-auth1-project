@@ -1,10 +1,9 @@
 const express = require("express")
-const router = express.Router()
 const bcrypt = require('bcryptjs')
 const Users = require('./usersModel')
-
-
-
+const { restrict } = require('./usersMiddleware')
+ 
+const router = express.Router()
 
 router.post('/api/register', async (req, res, next) => {
     try {
@@ -32,18 +31,41 @@ router.post('/api/register', async (req, res, next) => {
 })
 //Creates a user using the information sent inside the body of the request. Hash the password before saving the user to the database.
 
-router.post('/api/login', async (req, res, next) => {
-    try {
+router.post("/api/login", async (req, res, next) => {
+	try {
+		const { username, password } = req.body
+		const user = await Users.findBy({ username }).first()
 
-    } catch (err) {
-        next(err)
-    }
+		if (!user) {
+			return res.status(401).json({
+				message: "You shall not Pass!",
+			})
+		}
+		// will be true or false depending on whether the password matched the hash
+		const passwordValid = await bcrypt.compare(password, user.password)
+
+		if(!passwordValid){
+			return res.status(401).json({
+				message: "You shall not Pass!",
+		})
+		}
+
+		//creates a new session and sends it back to the client
+		req.session.user = user
+
+		res.json({
+			message: `Welcome ${user.username}! You've been logged in successfully!`,
+		})
+	} catch(err) {
+		next(err)
+	}
 })
+
 //Use the credentials sent inside the body to authenticate the user. On successful login, create a new session for the user and send back a 'Logged in' message and a cookie that contains the user id. If login fails, respond with the correct status code and the message: 'You shall not pass!'
 
-router.get('/api/users', async (req, res, next) => {
+router.get('/api/users', restrict(), async (req, res, next) => {
     try {
-
+        res.json(await Users.find())
     } catch (err) {
         next(err)
     }
